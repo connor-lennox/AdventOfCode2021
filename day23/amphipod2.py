@@ -75,17 +75,19 @@ def can_move_into_room(position: int, hallway, rooms)->bool:
 
     # If the room is able to be moved into
     room_open = all(slot == EMPTY or slot == pod for slot in rooms[target_room])
-    movein_depth = 2 if rooms[target_room][1] == EMPTY else 1
+
+    # Find deepest position to move in to
+    movein_depth = ROOM_DEPTH-1
+    while(rooms[target_room][movein_depth] != EMPTY and movein_depth > 0): movein_depth -= 1
     
     # If the path from pod to room is open
-    # path_open = all(hallway[pos] == EMPTY for pos in (range(position+1, roomopenings[pod]+1) if position < roomopenings[pod] else range(roomopenings[pod], position)))
     target_pos = roomopenings[pod]
     path_open = hallway_path(hallway, position + (1 if position < target_pos else -1), target_pos)
 
     # Cost to move * pod value
-    cost = (abs(roomopenings[pod] - position) + movein_depth) * pod
+    cost = (abs(roomopenings[pod] - position) + (movein_depth+1)) * pod
 
-    return room_open and path_open, cost, movein_depth-1
+    return room_open and path_open, cost, movein_depth
 
 
 def expand(state: State)->List[State]:
@@ -110,6 +112,9 @@ def expand(state: State)->List[State]:
     for i, room in enumerate(state.rooms):
         opening = (i+1) * 2
         room_complete = room == complete_rooms[i]
+
+        in_place = [r == reverse_roommap[i] for r in room]
+
         if not room_complete:
             for depth, slot in enumerate(room):
                 moving_pod = slot
